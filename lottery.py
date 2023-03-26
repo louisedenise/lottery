@@ -1,5 +1,6 @@
 import smartpy as sp
 
+
 class Lottery(sp.Contract):
     def __init__(self):
         #storage
@@ -17,6 +18,7 @@ class Lottery(sp.Contract):
 
         # assertions
         sp.verify(self.data.tickets_available > 0, "NO TICKETS AVAILABLE")
+        sp.verify(number_tickets <= self.data.tickets_available, "INVALID NUMBER OF TICKETS")
         sp.verify(sp.amount >= sp.tez(1), "INVALID AMOUNT")
 
         # storage changes
@@ -24,6 +26,9 @@ class Lottery(sp.Contract):
         self.data.tickets_available = sp.as_nat(self.data.tickets_available - number_tickets)
 
         # return extra tez
+        total_cost = sp.as_nat(self.data.ticket_cost) * number_tickets
+        #extra_amount = sp.as_nat(sp.amount) - total_cost
+
         extra_amount = sp.amount - self.data.ticket_cost
         sp.if extra_amount > sp.tez(0):
             sp.send(sp.sender, extra_amount)
@@ -54,6 +59,7 @@ class Lottery(sp.Contract):
         # assertion
         sp.verify(self.data.tickets_available == self.data.max_tickets, "GAME IS STILL ON")
         sp.verify(sp.sender == self.data.operator, "NOT AUTHORIZED")
+        sp.verify(new_cost >= sp.tez(1), "INVALID COST")
 
         # change ticket cost
         self.data.ticket_cost = new_cost
@@ -89,8 +95,8 @@ def test():
 
     # end game
     #scenario = lottery.end_game(23).run(now = sp.timestamp(4), sender = admin)
-    scenario = lottery.change_cost(sp.tez(2)).run(sender = admin)
+    scenario = lottery.change_cost(sp.tez(1)).run(sender = admin)
     scenario = lottery.max_tickets(sp.nat(10)).run(sender = admin)
-    scenario = lottery.buy_ticket(2).run(amount=sp.tez(10), sender=alice)
+    scenario = lottery.buy_ticket(9).run(amount=sp.tez(10), sender=alice)
 
 
